@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lua Comment Remover Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0e27;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e4e4e7;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 50px 20px 30px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8b5cf6, #06b6d4, #10b981, #8b5cf6);
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 50%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 17px;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0 20px;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #8b5cf6;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls-panel {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .controls-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .control-item {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .control-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #8b5cf6;
+        }
+
+        .control-item label {
+            color: #cbd5e1;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .control-desc {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .editor-panel {
+            background: #1e293b;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-panel:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+        }
+
+        .panel-header {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: #e4e4e7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .panel-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .panel-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .panel-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 550px;
+            padding: 24px;
+            background: #0f172a;
+            border: none;
+            color: #e4e4e7;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.7;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            background: #1a1f35;
+        }
+
+        textarea::placeholder {
+            color: #475569;
+        }
+
+        #output {
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.1);
+            color: #e4e4e7;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.2);
+            border-color: rgba(148, 163, 184, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-small {
+            padding: 10px 18px;
+            font-size: 13px;
+        }
+
+        .btn-icon-only {
+            padding: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 18px 26px;
+            border-radius: 14px;
+            box-shadow: 0 10px 50px rgba(16, 185, 129, 0.4);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .drag-drop-zone {
+            border: 2px dashed rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(139, 92, 246, 0.05);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .drag-drop-zone:hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .drag-drop-zone.dragging {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.2);
+            transform: scale(1.02);
+        }
+
+        .drag-drop-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .comparison-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .comparison-badge.reduction {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+        }
+
+        @media (max-width: 1200px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+            }
+
+            textarea {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .header {
+                padding: 30px 15px 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 6px;
+            border: 2px solid #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Lua Comment Remover Pro</h1>
+            <p class="subtitle">Professional-grade comment removal with intelligent parsing, syntax preservation, and advanced whitespace control</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="inputLines">0</span>
+                <span class="stat-label">Input Lines</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="outputLines">0</span>
+                <span class="stat-label">Output Lines</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="commentsRemoved">0</span>
+                <span class="stat-label">Comments Removed</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="sizeReduction">0%</span>
+                <span class="stat-label">Size Reduction</span>
+            </div>
+        </div>
+        
+        <div class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <div class="drag-drop-icon">📁</div>
+            <div style="font-size: 16px; font-weight: 600; color: #e4e4e7; margin-bottom: 8px;">
+                Drop your .lua file here or click to browse
+            </div>
+            <div style="font-size: 13px; color: #94a3b8;">
+                Supports .lua and .txt files
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="controls-title">⚙️ Processing Options</div>
+            <div class="controls-grid">
+                <div class="control-item" onclick="toggleCheckbox('removeBlankLines')">
+                    <input type="checkbox" id="removeBlankLines" onclick="event.stopPropagation()">
+                    <label for="removeBlankLines">
+                        <span>Remove Blank Lines</span>
+                        <span class="control-desc">Eliminate all empty lines</span>
+                    </label>
+                </div>
+                <div class="control-item" onclick="toggleCheckbox('trimWhitespace')">
+                    <input type="checkbox" id="trimWhitespace" checked onclick="event.stopPropagation()">
+                    <label for="trimWhitespace">
+                        <span>Trim Whitespace</span>
+                        <span class="control-desc">Remove trailing spaces</span>
+                    </label>
+                </div>
+                <div class="control-item" onclick="toggleCheckbox('smartSpacing')">
+                    <input type="checkbox" id="smartSpacing" checked onclick="event.stopPropagation()">
+                    <label for="smartSpacing">
+                        <span>Smart Spacing</span>
+                        <span class="control-desc">Clean spacing between code blocks</span>
+                    </label>
+                </div>
+                <div class="control-item" onclick="toggleCheckbox('preserveIndentation')">
+                    <input type="checkbox" id="preserveIndentation" checked onclick="event.stopPropagation()">
+                    <label for="preserveIndentation">
+                        <span>Preserve Indentation</span>
+                        <span class="control-desc">Keep code structure</span>
+                    </label>
+                </div>
+                <div class="control-item" onclick="toggleCheckbox('normalizeLineEndings')">
+                    <input type="checkbox" id="normalizeLineEndings" checked onclick="event.stopPropagation()">
+                    <label for="normalizeLineEndings">
+                        <span>Normalize Line Endings</span>
+                        <span class="control-desc">Use consistent LF</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg class="panel-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Input Code
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-secondary btn-small" onclick="document.getElementById('fileInput').click()">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            Upload
+                        </button>
+                        <button class="btn-secondary btn-small" onclick="clearInput()">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <textarea id="input" placeholder="Paste your Lua code here or drag & drop a file..." spellcheck="false"></textarea>
+            </div>
+
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <svg class="panel-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Output (No Comments)
+                        <span id="reductionBadge"></span>
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-secondary btn-small" onclick="downloadOutput()">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            Download
+                        </button>
+                        <button class="btn-secondary btn-small" onclick="copyOutput()">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <textarea id="output" readonly placeholder="Processed code will appear here..." spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="removeComments()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Process & Remove Comments
+            </button>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".lua,.txt" onchange="handleFileUpload(event)">
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentFilename = 'output.lua';
+        let processingStats = {
+            commentsRemoved: 0,
+            inputSize: 0,
+            outputSize: 0
+        };
+
+        // Drag and drop functionality
+        const dropZone = document.getElementById('dropZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragging');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragging');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function toggleCheckbox(id) {
+            const checkbox = document.getElementById(id);
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+        }
+
+        function removeComments() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+            
+            if (!input.trim()) {
+                showToast('⚠️ Please enter some Lua code first', 'error');
+                return;
+            }
+            
+            try {
+                const startTime = performance.now();
+                let result = removeLuaComments(input);
+                result = processWhitespace(result);
+                
+                const endTime = performance.now();
+                const processingTime = (endTime - startTime).toFixed(2);
+                
+                output.value = result;
+                updateStats(input, result);
+                showToast(`✓ Comments removed in ${processingTime}ms`);
+            } catch (e) {
+                output.value = 'Error processing code: ' + e.message;
+                showToast('✗ Error processing code', 'error');
+                console.error(e);
+            }
+        }
+
+        function removeLuaComments(code) {
+            let result = '';
+            let i = 0;
+            processingStats.commentsRemoved = 0;
+            
+            while (i < code.length) {
+                const char = code[i];
+                const nextChar = i + 1 < code.length ? code[i + 1] : '';
+                
+                // Handle single-quoted strings
+                if (char === "'") {
+                    result += char;
+                    i++;
+                    while (i < code.length) {
+                        if (code[i] === '\\' && i + 1 < code.length) {
+                            result += code[i] + code[i + 1];
+                            i += 2;
+                        } else if (code[i] === "'") {
+                            result += code[i];
+                            i++;
+                            break;
+                        } else {
+                            result += code[i];
+                            i++;
+                        }
+                    }
+                }
+                // Handle double-quoted strings
+                else if (char === '"') {
+                    result += char;
+                    i++;
+                    while (i < code.length) {
+                        if (code[i] === '\\' && i + 1 < code.length) {
+                            result += code[i] + code[i + 1];
+                            i += 2;
+                        } else if (code[i] === '"') {
+                            result += code[i];
+                            i++;
+                            break;
+                        } else {
+                            result += code[i];
+                            i++;
+                        }
+                    }
+                }
+                // Handle long string literals
+                else if (char === '[') {
+                    const longBracketMatch = matchLongBracket(code, i, false);
+                    if (longBracketMatch) {
+                        result += longBracketMatch.content;
+                        i = longBracketMatch.endIndex;
+                    } else {
+                        result += char;
+                        i++;
+                    }
+                }
+                // Handle comments
+                else if (char === '-' && nextChar === '-') {
+                    processingStats.commentsRemoved++;
+                    const commentMatch = matchLongBracket(code, i + 2, true);
+                    if (commentMatch) {
+                        i = commentMatch.endIndex;
+                    } else {
+                        while (i < code.length && code[i] !== '\n') {
+                            i++;
+                        }
+                        if (i < code.length && code[i] === '\n') {
+                            result += '\n';
+                            i++;
+                        }
+                    }
+                }
+                else {
+                    result += char;
+                    i++;
+                }
+            }
+            
+            return result;
+        }
+
+        function matchLongBracket(code, startIndex, isComment) {
+            if (startIndex >= code.length || code[startIndex] !== '[') return null;
+            
+            let i = startIndex + 1;
+            let equalsCount = 0;
+            
+            // Count equals signs
+            while (i < code.length && code[i] === '=') {
+                equalsCount++;
+                i++;
+            }
+            
+            // Must have matching opening bracket
+            if (i >= code.length || code[i] !== '[') return null;
+            
+            i++; // Move past second '['
+            
+            // Search for closing bracket with same number of equals
+            while (i < code.length) {
+                if (code[i] === ']') {
+                    let j = i + 1;
+                    let closingEquals = 0;
+                    
+                    // Count equals in potential closing bracket
+                    while (j < code.length && code[j] === '=' && closingEquals < equalsCount) {
+                        closingEquals++;
+                        j++;
+                    }
+                    
+                    // Check if we have a matching closing bracket
+                    if (closingEquals === equalsCount && j < code.length && code[j] === ']') {
+                        if (isComment) {
+                            // For comments, return empty content (we're removing it)
+                            return { content: '', endIndex: j + 1 };
+                        } else {
+                            // For strings, preserve the entire literal including brackets
+                            return { content: code.substring(startIndex, j + 1), endIndex: j + 1 };
+                        }
+                    }
+                }
+                i++;
+            }
+            
+            // No matching closing bracket found - not a valid long bracket
+            return null;
+        }
+
+        function processWhitespace(code) {
+            const removeBlankLines = document.getElementById('removeBlankLines').checked;
+            const trimWhitespace = document.getElementById('trimWhitespace').checked;
+            const smartSpacing = document.getElementById('smartSpacing').checked;
+            const preserveIndentation = document.getElementById('preserveIndentation').checked;
+            const normalizeLineEndings = document.getElementById('normalizeLineEndings').checked;
+
+            if (normalizeLineEndings) {
+                code = code.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            }
+
+            let lines = code.split('\n');
+
+            if (trimWhitespace) {
+                lines = lines.map(line => line.trimEnd());
+            }
+
+            if (removeBlankLines) {
+                lines = lines.filter(line => line.trim().length > 0);
+            } else if (!preserveIndentation) {
+                lines = lines.map(line => line.trim());
+            }
+
+            let result = lines.join('\n');
+
+            // Smart spacing for clean code formatting
+            if (smartSpacing && !removeBlankLines) {
+                // First, normalize excessive blank lines (3+ becomes 2)
+                result = result.replace(/\n{3,}/g, '\n\n');
+                
+                // Add spacing around function definitions
+                result = result.replace(/(\n)(local\s+function|function)\s+/g, '\n\n$2 ');
+                
+                // Add spacing before return statements that aren't already spaced
+                result = result.replace(/([^\n])\n(return\s+)/g, '$1\n\n$2');
+                
+                // Add spacing around for/while/if blocks
+                result = result.replace(/(\n)(for|while|if|elseif)\s+/g, '\n\n$2 ');
+                
+                // Clean up any triple+ newlines that might have been created
+                result = result.replace(/\n{3,}/g, '\n\n');
+                
+                // Remove spacing at the very beginning
+                result = result.replace(/^\n+/, '');
+            } else if (!removeBlankLines) {
+                result = result.replace(/\n{4,}/g, '\n\n\n');
+            }
+
+            return result.trim();
+        }
+
+        function updateStats(input, output) {
+            const inputLines = input.split('\n').length;
+            const outputLines = output.split('\n').length;
+            const inputSize = new Blob([input]).size;
+            const outputSize = new Blob([output]).size;
+            const reduction = inputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
+
+            document.getElementById('inputLines').textContent = inputLines.toLocaleString();
+            document.getElementById('outputLines').textContent = outputLines.toLocaleString();
+            document.getElementById('commentsRemoved').textContent = processingStats.commentsRemoved.toLocaleString();
+            document.getElementById('sizeReduction').textContent = reduction + '%';
+
+            const badge = document.getElementById('reductionBadge');
+            if (reduction > 0) {
+                badge.innerHTML = `<span class="comparison-badge reduction">-${reduction}% size</span>`;
+            } else {
+                badge.innerHTML = '';
+            }
+
+            processingStats.inputSize = inputSize;
+            processingStats.outputSize = outputSize;
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) handleFile(file);
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.lua') && !file.name.endsWith('.txt')) {
+                showToast('⚠️ Please upload a .lua or .txt file', 'error');
+                return;
+            }
+
+            currentFilename = file.name.replace(/\.(lua|txt)$/, '') + '_no_comments.lua';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('input').value = e.target.result;
+                removeComments();
+                showToast('✓ File loaded: ' + file.name);
+            };
+            reader.onerror = function() {
+                showToast('✗ Error reading file', 'error');
+            };
+            reader.readAsText(file);
+        }
+
+        function downloadOutput() {
+            const output = document.getElementById('output').value;
+            
+            if (!output.trim()) {
+                showToast('⚠️ Nothing to download', 'error');
+                return;
+            }
+
+            const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            const size = (blob.size / 1024).toFixed(2);
+            showToast(`✓ Downloaded: ${currentFilename} (${size} KB)`);
+        }
+
+        function clearInput() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            currentFilename = 'output.lua';
+            document.getElementById('inputLines').textContent = '0';
+            document.getElementById('outputLines').textContent = '0';
+            document.getElementById('commentsRemoved').textContent = '0';
+            document.getElementById('sizeReduction').textContent = '0%';
+            document.getElementById('reductionBadge').innerHTML = '';
+            showToast('✓ Cleared');
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('output');
+            
+            if (!output.value.trim()) {
+                showToast('⚠️ Nothing to copy', 'error');
+                return;
+            }
+            
+            output.select();
+            document.execCommand('copy');
+            
+            const lines = output.value.split('\n').length;
+            showToast(`✓ Copied ${lines} lines to clipboard`);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Auto-process on input with debouncing
+        let debounceTimer;
+        document.getElementById('input').addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const input = document.getElementById('input').value;
+                if (input.trim()) {
+                    removeComments();
+                }
+            }, 800);
+        });
+
+        // Re-process when options change
+        ['removeBlankLines', 'trimWhitespace', 'smartSpacing', 'preserveIndentation', 'normalizeLineEndings'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                const input = document.getElementById('input').value;
+                if (input.trim()) {
+                    removeComments();
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to process
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                removeComments();
+            }
+            // Ctrl/Cmd + S to download
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                downloadOutput();
+            }
+            // Ctrl/Cmd + K to clear
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                clearInput();
+            }
+        });
+    </script>
+</body>
+</html>
