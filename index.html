@@ -351,6 +351,10 @@
                     <input type="checkbox" id="trimBraceSpaces" checked>
                     <label for="trimBraceSpaces">Trim Brace Spaces</label>
                 </div>
+                <div class="control">
+                    <input type="checkbox" id="liveProcessing">
+                    <label for="liveProcessing">Live Processing</label>
+                </div>
             </div>
         </div>
 
@@ -376,6 +380,15 @@
                 </div>
                 <textarea id="output" readonly placeholder="Processed code will appear here..." spellcheck="false"></textarea>
             </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button class="btn-primary" onclick="removeComments()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                Process & Remove Comments
+            </button>
         </div>
     </div>
 
@@ -464,9 +477,6 @@
             
             const len = code.length;
             
-            // Pre-compile regex patterns for performance
-            const keywordPattern = /^(function|do|then|repeat|if|for|while|local|return|end|else|elseif|until)\b/;
-            
             while (i < len) {
                 const char = code[i];
                 
@@ -500,17 +510,21 @@
                     continue;
                 }
                 
-                // Optimized comment detection and removal
+                // Comment detection - THIS IS THE KEY PART
                 if (char === '-' && nextChar === '-') {
                     processingStats.commentsRemoved++;
                     
-                    // Fast check for multi-line comment
-                    if (i + 2 < len && code[i + 2] === '[') {
-                        const commentMatch = matchLongBracketFast(code, i + 2, true, len);
+                    // Look ahead to see if this is --[[ or --[=[
+                    const afterDashes = i + 2;
+                    if (afterDashes < len && code[afterDashes] === '[') {
+                        // Try to match as a long bracket comment
+                        const commentMatch = matchLongBracketFast(code, afterDashes, true, len);
                         if (commentMatch) {
+                            // Found valid multi-line comment --[[...]]
+                            // Skip EVERYTHING including the closing ]]
                             i = commentMatch.endIndex;
                             
-                            // Minimal newline logic for speed
+                            // Handle trailing newline
                             if (i < len && code[i] === '\n') {
                                 result += '\n';
                                 i++;
@@ -519,20 +533,13 @@
                         }
                     }
                     
-                    // Single-line comment: fast skip to newline
-                    // Check if there's code before comment on this line
-                    let lineStart = result.length - 1;
-                    while (lineStart >= 0 && result[lineStart] !== '\n') {
-                        lineStart--;
-                    }
-                    const hasCodeBefore = result.slice(lineStart + 1).trim().length > 0;
-                    
-                    // Fast forward to end of line
+                    // If we get here, it's a single-line comment
+                    // Skip to end of line
                     while (i < len && code[i] !== '\n') {
                         i++;
                     }
                     
-                    // Preserve newline
+                    // Preserve the newline
                     if (i < len && code[i] === '\n') {
                         result += '\n';
                         i++;
@@ -540,7 +547,7 @@
                     continue;
                 }
                 
-                // Fallback for edge cases
+                // Fallback
                 result += char;
                 i++;
             }
@@ -665,49 +672,122 @@
             return { content, endIndex: i };
         }
         
-        // Optimized bracket matcher with minimal allocations
+        // Optimized bracket matcher with advanced intelligence
         function matchLongBracketFast(code, startIndex, isComment, len) {
+            // Expecting to start at first [
             if (startIndex >= len || code[startIndex] !== '[') return null;
             
-            let i = startIndex + 1;
+            let pos = startIndex + 1;
             let equalsCount = 0;
             
-            // Count equals
-            while (i < len && code[i] === '=') {
+            // Count = signs in opening bracket
+            while (pos < len && code[pos] === '=') {
                 equalsCount++;
-                i++;
+                pos++;
             }
             
-            // Validate opening
-            if (i >= len || code[i] !== '[') return null;
+            // Must have second [ to complete opening bracket
+            if (pos >= len || code[pos] !== '[') return null;
             
-            i++; // Skip second [
+            pos++; // Skip the second [, now inside the content
             
-            // Search for matching closing bracket
-            while (i < len) {
-                if (code[i] === ']') {
-                    let j = i + 1;
-                    let closingEquals = 0;
+            // Advanced multi-strategy matching for maximum accuracy:
+            // Strategy 1: Closing bracket alone on its line (highest priority - most common format)
+            // Strategy 2: Closing bracket at end of line with only whitespace before
+            // Strategy 3: First valid closing bracket (fallback - standard Lua)
+            
+            let firstValidClose = -1;
+            let isolatedClose = -1;
+            let endOfLineClose = -1;
+            let searchPos = pos;
+            
+            // Comprehensive search for closing brackets
+            while (searchPos < len) {
+                if (code[searchPos] === ']') {
+                    let checkPos = searchPos + 1;
+                    let foundEquals = 0;
                     
-                    while (j < len && code[j] === '=' && closingEquals < equalsCount) {
-                        closingEquals++;
-                        j++;
+                    // Count = signs after the ]
+                    while (checkPos < len && code[checkPos] === '=') {
+                        foundEquals++;
+                        checkPos++;
                     }
                     
-                    if (closingEquals === equalsCount && j < len && code[j] === ']') {
+                    // Must have exactly equalsCount = signs followed by ]
+                    if (foundEquals === equalsCount && checkPos < len && code[checkPos] === ']') {
+                        const closeEnd = checkPos + 1;
+                        
+                        // Record first match (fallback strategy)
+                        if (firstValidClose < 0) {
+                            firstValidClose = closeEnd;
+                        }
+                        
+                        // For comments, apply intelligent strategies
                         if (isComment) {
-                            return { content: '', endIndex: j + 1 };
+                            // Check whitespace before ] on same line
+                            let lineStart = searchPos - 1;
+                            let onlyWhitespaceBefore = true;
+                            while (lineStart >= 0 && code[lineStart] !== '\n') {
+                                if (code[lineStart].trim() !== '') {
+                                    onlyWhitespaceBefore = false;
+                                    break;
+                                }
+                                lineStart--;
+                            }
+                            
+                            // Check whitespace after ] on same line
+                            let lineEnd = closeEnd;
+                            let onlyWhitespaceAfter = true;
+                            while (lineEnd < len && code[lineEnd] !== '\n') {
+                                if (code[lineEnd].trim() !== '') {
+                                    onlyWhitespaceAfter = false;
+                                    break;
+                                }
+                                lineEnd++;
+                            }
+                            
+                            // Strategy 1: Isolated on its own line (best match)
+                            if (onlyWhitespaceBefore && onlyWhitespaceAfter && isolatedClose < 0) {
+                                isolatedClose = closeEnd;
+                                break; // Found perfect match, stop searching
+                            }
+                            
+                            // Strategy 2: At end of line (good match)
+                            if (onlyWhitespaceAfter && endOfLineClose < 0) {
+                                endOfLineClose = closeEnd;
+                            }
                         } else {
+                            // For strings, use first match immediately (standard Lua)
                             return { 
-                                content: code.slice(startIndex, j + 1), 
-                                endIndex: j + 1 
+                                content: code.slice(startIndex, closeEnd), 
+                                endIndex: closeEnd 
                             };
                         }
+                        
+                        searchPos = closeEnd;
+                        continue;
                     }
                 }
-                i++;
+                
+                searchPos++;
             }
             
+            // Select best match using priority hierarchy
+            let finalClose = isolatedClose > 0 ? isolatedClose : 
+                           (endOfLineClose > 0 ? endOfLineClose : firstValidClose);
+            
+            if (finalClose > 0) {
+                if (isComment) {
+                    return { content: '', endIndex: finalClose };
+                } else {
+                    return { 
+                        content: code.slice(startIndex, finalClose), 
+                        endIndex: finalClose 
+                    };
+                }
+            }
+            
+            // No valid closing bracket found
             return null;
         }
         
@@ -961,6 +1041,9 @@
 
         let debounceTimer;
         document.getElementById('input').addEventListener('input', () => {
+            // Only auto-process if live processing is enabled
+            if (!document.getElementById('liveProcessing').checked) return;
+            
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 const input = document.getElementById('input').value;
@@ -972,6 +1055,9 @@
 
         ['removeBlankLines', 'trimWhitespace', 'smartSpacing', 'preserveIndentation', 'normalizeLineEndings', 'trimBraceSpaces'].forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
+                // Only auto-process if live processing is enabled
+                if (!document.getElementById('liveProcessing').checked) return;
+                
                 const input = document.getElementById('input').value;
                 if (input.trim()) {
                     removeComments();
