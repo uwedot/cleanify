@@ -9,6 +9,17 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+      }
+
+      *:focus {
+        outline: none;
+      }
+
+      *::selection {
+        background: #3b82f6;
+        color: #fff;
       }
 
       body {
@@ -109,6 +120,12 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      button:active, .btn:active {
+        transform: scale(0.96);
       }
 
       .btn-primary {
@@ -248,7 +265,7 @@
       <div class="btn-group">
         <label class="btn btn-secondary">
           Upload File
-          <input type="file" id="fileInput" accept=".lua,.txt" />
+          <input type="file" id="fileInput" accept=".lua,.luau,.txt" />
         </label>
         <button class="btn btn-primary" onclick="compress()">Compress Code</button>
       </div>
@@ -388,7 +405,7 @@
       }
 
       const LZW = {
-        CHARS: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@[]^_`{|}~"',
+        CHARS: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,-./:;<=>?@^_`|~',
 
         encode(codes) {
           if (!Array.isArray(codes) || codes.length === 0) {
@@ -632,10 +649,10 @@
         if (!f) return;
         
         const fileName = f.name.toLowerCase();
-        const isValidExtension = fileName.endsWith('.lua') || fileName.endsWith('.txt');
+        const isValidExtension = fileName.endsWith('.lua') || fileName.endsWith('.luau') || fileName.endsWith('.txt');
         
         if (!isValidExtension) {
-          toast('Only .lua and .txt files are allowed', true);
+          toast('Only .lua, .luau and .txt files are allowed', true);
           fileInput.value = '';
           return;
         }
@@ -648,7 +665,7 @@
           return;
         }
         
-        const nameWithoutExt = f.name.replace(/\.(lua|txt)$/i, '');
+        const nameWithoutExt = f.name.replace(/\.(lua|luau|txt)$/i, '');
         currentFileName = nameWithoutExt;
         
         const maxSize = 5 * 1024 * 1024;
