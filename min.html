@@ -26,18 +26,11 @@
       }
 
       h1 {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 600;
-        margin-bottom: 8px;
+        margin-bottom: 32px;
         color: #ffffff;
         text-align: center;
-      }
-
-      .subtitle {
-        text-align: center;
-        color: #8b949e;
-        font-size: 14px;
-        margin-bottom: 32px;
       }
 
       .section {
@@ -48,7 +41,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
       }
 
       .section-header-left {
@@ -57,33 +50,33 @@
         gap: 8px;
       }
 
-      .file-size {
+      label {
         font-size: 12px;
+        font-weight: 500;
+        color: #6e7681;
+      }
+
+      .file-size {
+        font-size: 11px;
         color: #58a6ff;
         font-weight: 400;
       }
 
-      label {
-        font-size: 13px;
-        font-weight: 500;
-        color: #8b949e;
-      }
-
       .section-btn {
-        padding: 6px 14px;
+        padding: 4px 12px;
         border: 1px solid #30363d;
-        border-radius: 6px;
-        font-size: 13px;
+        border-radius: 4px;
+        font-size: 12px;
         font-weight: 500;
         cursor: pointer;
-        background: #161b22;
-        color: #c9d1d9;
+        background: transparent;
+        color: #8b949e;
         transition: all 0.15s;
       }
 
       .section-btn:hover {
-        border-color: #58a6ff;
-        background: #1c2128;
+        color: #c9d1d9;
+        border-color: #8b949e;
       }
 
       .section-btn:active {
@@ -92,21 +85,21 @@
 
       textarea {
         width: 100%;
-        height: 180px;
+        height: 200px;
         background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
+        border: 1px solid #21262d;
+        border-radius: 4px;
         padding: 12px;
         color: #e6edf3;
         font-family: 'Nunito', 'Rounded', -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 13px;
         resize: none;
         outline: none;
+        transition: border-color 0.15s;
       }
 
       textarea:focus {
         border-color: #58a6ff;
-        background: #0d1117;
       }
 
       .actions {
@@ -116,20 +109,20 @@
       }
 
       button {
-        padding: 10px 20px;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        font-size: 14px;
+        padding: 8px 16px;
+        border: 1px solid #21262d;
+        border-radius: 4px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
-        background: #161b22;
+        background: #0d1117;
         color: #c9d1d9;
         transition: all 0.15s;
       }
 
       button:hover {
         border-color: #58a6ff;
-        background: #1c2128;
+        background: #161b22;
       }
 
       button:active {
@@ -141,31 +134,12 @@
         color: #ffffff;
         border-color: #238636;
         width: 100%;
+        padding: 10px;
       }
 
       .btn-primary:hover {
         background: #2ea043;
         border-color: #2ea043;
-      }
-
-      .stats {
-        display: flex;
-        justify-content: center;
-        gap: 16px;
-        font-size: 13px;
-        color: #8b949e;
-        padding: 12px 0;
-        border-top: 1px solid #30363d;
-      }
-
-      .stats span {
-        display: flex;
-        gap: 6px;
-      }
-
-      .stats strong {
-        color: #58a6ff;
-        font-weight: 500;
       }
 
       input[type="file"] {
@@ -201,7 +175,6 @@
   <body>
     <div class="container">
       <h1>Lua Compressor</h1>
-      <p class="subtitle">Compress your code efficiently</p>
 
       <div class="section">
         <div class="section-header">
@@ -229,13 +202,7 @@
         <textarea id="output" placeholder="Compressed output" readonly></textarea>
       </div>
 
-      <input type="file" id="fileInput" accept=".lua,.txt" />
-
-      <div class="stats">
-        <span><strong id="ratio">0%</strong> smaller</span>
-        <span><strong id="saved">0 B</strong> saved</span>
-        <span><strong id="time">0ms</strong></span>
-      </div>
+      <input type="file" id="fileInput" accept=".lua,.luau,.txt" />
     </div>
 
     <div id="toast" class="toast"></div>
@@ -486,9 +453,6 @@
       let currentFileName = 'compressed';
       const input = document.getElementById('input');
       const output = document.getElementById('output');
-      const ratio = document.getElementById('ratio');
-      const saved = document.getElementById('saved');
-      const time = document.getElementById('time');
       const toast = document.getElementById('toast');
       const inputSize = document.getElementById('inputSize');
       const outputSize = document.getElementById('outputSize');
@@ -506,17 +470,6 @@
         
         inputSize.textContent = formatBytes(i);
         outputSize.textContent = formatBytes(o);
-        
-        if (i && o && o > 0) {
-          const p = ((1 - o / i) * 100).toFixed(1);
-          const s = i - o;
-          
-          ratio.textContent = `${p}%`;
-          saved.textContent = formatBytes(s);
-        } else {
-          ratio.textContent = '0%';
-          saved.textContent = '0 B';
-        }
       }
 
       input.addEventListener('input', () => {
@@ -532,14 +485,8 @@
           return;
         }
         
-        const startTime = performance.now();
-        
         try {
           output.value = LZW.compress(input.value);
-          const endTime = performance.now();
-          const timeTaken = endTime - startTime;
-          
-          time.textContent = `${Math.round(timeTaken)}ms`;
           updateStats();
           showToast('Compressed');
         } catch (e) {
@@ -554,11 +501,29 @@
         }
         
         try {
+          // Force lua MIME type
+          const blob = new Blob([output.value], { type: 'application/x-lua' });
           const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([output.value], { type: 'text/plain' }));
-          a.download = `${currentFileName}_compressed.lua`;
+          const url = URL.createObjectURL(blob);
+          
+          a.href = url;
+          
+          // Clean up the filename
+          let fileName = currentFileName;
+          
+          // Remove specific extensions
+          fileName = fileName.replace(/\.(lua|luau|txt)$/i, '');
+          
+          // Ensure it ends with .lua
+          a.download = `${fileName}.min.lua`;
+          
+          a.style.display = 'none';
+          
+          document.body.appendChild(a);
           a.click();
-          URL.revokeObjectURL(a.href);
+          document.body.removeChild(a);
+          
+          setTimeout(() => URL.revokeObjectURL(url), 100);
           showToast('Downloaded');
         } catch (e) {
           showToast('Download failed', 'error');
@@ -570,8 +535,8 @@
         if (!f) return;
         
         const fileName = f.name.toLowerCase();
-        if (!fileName.endsWith('.lua') && !fileName.endsWith('.txt')) {
-          showToast('Only .lua and .txt files', 'error');
+        if (!fileName.endsWith('.lua') && !fileName.endsWith('.luau') && !fileName.endsWith('.txt')) {
+          showToast('Only .lua, .luau and .txt files', 'error');
           e.target.value = '';
           return;
         }
@@ -588,7 +553,8 @@
           return;
         }
         
-        currentFileName = f.name.replace(/\.(lua|txt)$/i, '');
+        // Extract filename without extension
+        currentFileName = f.name.replace(/\.[^/.]+$/, '');
         
         const r = new FileReader();
         r.onload = e => {
