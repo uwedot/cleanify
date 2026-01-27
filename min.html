@@ -199,7 +199,6 @@
     ></div>
 
     <script>
-      // Clear all form data on page load to prevent persistence
       window.addEventListener('load', function() {
         try {
           document.getElementById('input').value = '';
@@ -212,7 +211,6 @@
         }
       });
 
-      // Prevent form data from being saved in session history
       window.addEventListener('beforeunload', function() {
         try {
           document.getElementById('input').value = '';
@@ -671,8 +669,11 @@
             return;
           }
 
-          const nameWithoutExt = f.name.replace(/\.(lua|txt|luau)$/i, '');
-          currentFileName = nameWithoutExt;
+          let nameWithoutExt = f.name;
+          while (nameWithoutExt.includes('.')) {
+            nameWithoutExt = nameWithoutExt.substring(0, nameWithoutExt.lastIndexOf('.'));
+          }
+          currentFileName = nameWithoutExt || 'compressed';
 
           const maxSize = 5242880;
           if (f.size > maxSize) {
